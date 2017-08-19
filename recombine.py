@@ -96,7 +96,7 @@ while True:
             # game state is updated inside event handling to allow mouse+keyboard input
             ## Adjust mouse position by the border width, clip that at 0.
             ## Scale down by the size of each square and clip that at piece-width away from the right edge.
-            dropindex = min(max(mouse[0]-boardoffset, 0) / gridsize, boardwidth - len(drop[0]))
+            dropindex = min(max(mouse[0]-boardoffset, 0) // gridsize, boardwidth - len(drop[0]))
         
         if event.type == pygame.QUIT:
             shutdown()
