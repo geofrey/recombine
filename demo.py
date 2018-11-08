@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 import pygame
 import time
 from abstract_animation import Animation
