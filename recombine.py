@@ -66,12 +66,6 @@ while True:
             if event.button == 1: # left
                 if state != 'moving' and state != 'pause':
                     state = 'drop'
-            if event.button == 3: # right
-                if state == 'pause':
-                    state = pause # restore
-                else:
-                    pause = state
-                    state = 'pause'
             if event.button == 4: # wheel
                 drop = spin(drop, 'right')
             if event.button == 5: # wheel
@@ -167,10 +161,6 @@ while True:
                 draw.ellipse(screen, combinecolors[board[i][j]], piece, 0)
     
     screen.blit(scorefont.render(str(score), True, gridcolor), scoreoffset)
-
-    if state == 'pause':
-        pausenote = scorefont.render('paused', True, gridcolor)
-        screen.blit(pausenote, window.center) # not properly centered...
     
     pygame.display.flip()
 
