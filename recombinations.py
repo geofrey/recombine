@@ -86,11 +86,8 @@ class Board:
 import random
 # this is the only function that uses random
 
-def new_drop(maxcolor, mode = 'normal'):
-    if mode == 'rapidfire':
-        return [[1]]
-    else:
-        return [[random.randint(1, maxcolor-1), random.randint(1, maxcolor-1)]]
+def new_drop(maxcolor):
+    return [[random.randint(1, maxcolor-1), random.randint(1, maxcolor-1)]]
 
 def spin(old, direction):
     if len(old) == 2: # vertical

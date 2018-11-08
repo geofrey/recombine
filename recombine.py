@@ -8,10 +8,6 @@ from recombinations import *
 
 # game variables
 
-mode = 'normal' # set to 'rapidfire' for nonstop single-green drops
-# (anything else is === 'normal')
-autofire = True # only used with 'rapidfire'
-
 boardheight = 7
 boardwidth = 7
 currentcolor = 3
@@ -45,7 +41,7 @@ scoreoffset = (boardoffset, boardoffset)
 combinecolors = ['green', 'yellow', 'orange', 'red', 'magenta', 'purple', 'blue', 'cyan', 'black', 'white']
 combinecolors = [None] + list(map(pygame.Color, combinecolors)) # generate Color objects and put a placeholder in position 0
 combinescores = [None, 5, 10, 15, 35, 295, 305, 315, 325, 335, 670]
-drop = new_drop(currentcolor, mode)
+drop = new_drop(currentcolor)
 dropindex = 0
 gridcolor = pygame.Color('white')
 outlinecolor = pygame.Color('black')
@@ -103,10 +99,6 @@ while True:
 
     # update stuff
     if state == 'drop':
-        if mode == 'rapidfire' and autofire:
-            dropindex = boardwidth - 1
-            while dropindex >= 0 and board[boardheight-1][dropindex] != 0:
-                dropindex -= 1
         board.insert(drop, dropindex)
         turn += 1
         state = 'moving'
@@ -127,7 +119,7 @@ while True:
             if board.overheight():
                 state = 'gameover'
             else:
-                drop = new_drop(currentcolor, mode)
+                drop = new_drop(currentcolor)
                 frametime = idletime
                 state = 'idle'
                 if mode == 'rapidfire':
