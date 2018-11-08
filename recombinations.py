@@ -90,6 +90,8 @@ def new_drop(maxcolor):
     return [[random.randint(1, maxcolor-1), random.randint(1, maxcolor-1)]]
 
 def spin(old, direction):
+    if old == None:
+        return None
     if len(old) == 2: # vertical
         if direction == 'left':
             new = [[old[0][0], old[1][0]]]
