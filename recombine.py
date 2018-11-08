@@ -23,7 +23,6 @@ mouse = (0, 0)
 turn = 0
 score = 0
 
-state = 'idle'
 
 # init
 
@@ -55,7 +54,12 @@ def shutdown():
     print(score, 'points')
     quit()
 
+def stateEvent(state):
+    pygame.event.post(pygame.event.Event(pygame.USEREVENT, {'state': state}))
+
 # event loop
+
+stateEvent('idle')
 
 while True:
     start = time.clock()
@@ -63,24 +67,22 @@ while True:
     # check events
     for event in pygame.event.get():
         if event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1: # left
-                if state != 'moving' and state != 'pause':
-                    state = 'drop'
-            if event.button == 4: # wheel
-                drop = spin(drop, 'right')
-            if event.button == 5: # wheel
-                drop = spin(drop, 'left')
+            if   event.button == 1: # left
+                stateEvent('drop')
+            elif event.button == 4: # wheel
+                stateEvent('spinRight')
+            elif event.button == 5: # wheel
+                stateEvent('spinLeft')
         
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_UP:
-                drop = spin(drop, 'right')
-            if event.key == pygame.K_DOWN or event.key == pygame.K_SPACE:
-                if state != 'moving':
-                    state = 'drop'
-            if event.key == pygame.K_LEFT:
-                dropindex = max(0, dropindex - 1)
-            if event.key == pygame.K_RIGHT:
-                dropindex = min(dropindex + 1, boardwidth)
+            if   event.key == pygame.K_UP:
+                stateEvent('spinRight')
+            elif event.key == pygame.K_DOWN or event.key == pygame.K_SPACE:
+                stateEvent('drop')
+            elif event.key == pygame.K_LEFT:
+                stateEvent('moveLeft')
+            elif event.key == pygame.K_RIGHT:
+                stateEvent('moveRight')
         if event.type == pygame.MOUSEMOTION:
             mouse = event.pos
             # game state is updated inside event handling to allow mouse+keyboard input
@@ -90,36 +92,46 @@ while True:
         
         if event.type == pygame.QUIT:
             shutdown()
-
-    # update stuff
-    if state == 'drop':
-        board.insert(drop, dropindex)
-        turn += 1
-        state = 'moving'
-    elif state == 'moving':
-        state = 'moving' if board.gravity() else 'breaking'
-        frametime = droptime
-    elif state == 'breaking':
-        state = 'idle'
-        groups = list(filter(validgroup, board.find_groups()))        
-        if len(groups) > 0:
-            for group in groups:
-                groupcolor = board[group[0][0]][group[0][1]]
-                currentcolor = max(board.replace_group(group), currentcolor)
-                score += combinescores[groupcolor]*len(group)
-            frametime = breaktime
-            state = 'moving'
-        else:
-            if board.overheight():
-                state = 'gameover'
-            else:
-                drop = new_drop(currentcolor)
-                frametime = idletime
-                state = 'idle'
-                if mode == 'rapidfire':
-                    state = 'drop'
-    elif state == 'gameover':
-        break
+        
+        if event.type == pygame.USEREVENT:
+            print(event.state)
+            # update stuff
+            if event.state == 'spinLeft' and drop:
+                drop = spin(drop, 'left')
+            elif event.state == 'spinRight' and drop:
+                drop = spin(drop, 'right')
+            elif event.state == 'moveLeft' and drop:
+                dropindex = max(0, dropindex - 1)
+            elif event.state == 'moveRight' and drop:
+                dropindex = min(dropindex + 1, boardwidth)
+            elif event.state == 'drop' and drop:
+                board.insert(drop, dropindex)
+                drop = None
+                turn += 1
+                stateEvent('moving')
+            
+            elif event.state == 'moving':
+                stateEvent('moving' if board.gravity() else 'breaking')
+                frametime = droptime
+            elif event.state == 'breaking':
+                stateEvent('idle')
+                groups = list(filter(validgroup, board.find_groups()))        
+                if len(groups) > 0:
+                    for group in groups:
+                        groupcolor = board[group[0][0]][group[0][1]]
+                        currentcolor = max(board.replace_group(group), currentcolor)
+                        score += combinescores[groupcolor]*len(group)
+                    frametime = breaktime
+                    stateEvent('moving')
+                else:
+                    if board.overheight():
+                        stateEvent('gameover')
+                    else:
+                        drop = new_drop(currentcolor)
+                        frametime = idletime
+                        stateEvent('idle')
+            elif event.state == 'gameover':
+                break
 
     # draw board
     
@@ -141,7 +153,7 @@ while True:
     piece = pygame.Rect(boardpos) # to be reused
     piece.width = piece.height = gridsize
     
-    if state == 'idle':
+    if drop:
         # draw drop
         for i in range(0, len(drop)):
             for j in range(0, len(drop[0])):
