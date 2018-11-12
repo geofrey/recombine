@@ -5,6 +5,7 @@ from pygame import rect, draw, event
 import time
 
 from recombinations import *
+from abstract_animation import Animation
 
 # game variables
 
@@ -26,6 +27,9 @@ score = 0
 
 # init
 
+scene = [] # decorations
+dots = [] # dots
+
 pygame.init()
 scorefont = pygame.font.Font(pygame.font.get_default_font(), 14)
 window = pygame.Rect(0, 0, gridsize*boardwidth + 2*boardoffset, gridsize*boardheight + 3*boardoffset)
@@ -33,7 +37,11 @@ screen = pygame.display.set_mode((gridsize*boardwidth + 2*boardoffset, gridsize*
 #screen = pygame.display.set_mode(window...
 window = screen.get_rect()
 
-background = pygame.Color('gray')
+background = Animation(None, None)
+background.draw = lambda: screen.fill(pygame.Color('gray'))
+background.ended = lambda: False
+scene.append(background)
+
 board = Board((boardheight, boardwidth), maxcolor)
 boardpos = pygame.Rect((boardoffset, 2*boardoffset), (boardwidth*gridsize, (boardheight+2)*gridsize))
 scoreoffset = (boardoffset, boardoffset)
@@ -134,9 +142,12 @@ while True:
             elif event.state == 'gameover':
                 break
 
-    # draw board
-    
-    screen.fill(background)
+    # draw everything on the board
+    for prop in scene:
+        prop.draw()
+        # these aren't going away
+    for dot in dots:
+        dot.draw()
     
     draw.line(screen, gridcolor, (boardpos.left, boardpos.top + 2*gridsize), (boardpos.right, boardpos.top + 2*gridsize), 3)
     draw.rect(screen, outlinecolor, boardpos, 4) # board outline

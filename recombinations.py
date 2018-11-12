@@ -1,3 +1,14 @@
+from pygame import draw
+from abstract_animation import Animation
+
+class Ball(Animation):
+    def __init__(self, screen, x, y, color):
+        self.screen = screen
+        self.x = x
+        self.y = y
+        self.color = color
+    def draw(self, time):
+        draw.ellipse(self.screen, self.color, piece, 0)
 
 class Board:
     # dimensions - 2-tuple
