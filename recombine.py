@@ -42,6 +42,18 @@ background.draw = lambda: screen.fill(pygame.Color('gray'))
 background.ended = lambda: False
 scene.append(background)
 
+heightlimit = Animation(None, None)
+heightlimit.draw = lambda: draw.line(screen, gridcolor, (boardpos.left, boardpos.top + 2*gridsize), (boardpos.right, boardpos.top + 2*gridsize), 3)
+scene.append(heightlimit)
+
+border = Animation(None, None)
+border.draw = lambda: draw.rect(screen, outlinecolor, boardpos, 4)
+scene.append(border)
+
+scoredisplay = Animation(None, None)
+scoredisplay.draw = lambda: screen.blit(scorefont.render(str(score), True, gridcolor), scoreoffset)
+scene.append(scoredisplay)
+
 board = Board((boardheight, boardwidth), maxcolor)
 boardpos = pygame.Rect((boardoffset, 2*boardoffset), (boardwidth*gridsize, (boardheight+2)*gridsize))
 scoreoffset = (boardoffset, boardoffset)
@@ -149,9 +161,6 @@ while True:
     for dot in dots:
         dot.draw()
     
-    draw.line(screen, gridcolor, (boardpos.left, boardpos.top + 2*gridsize), (boardpos.right, boardpos.top + 2*gridsize), 3)
-    draw.rect(screen, outlinecolor, boardpos, 4) # board outline
-    
     #colored blockies
     
     for level in range(1, currentcolor):
@@ -183,8 +192,6 @@ while True:
             if board[i][j] > 0:
                 #draw.rect(screen, combinecolors[board[i][j]], piece, 0)
                 draw.ellipse(screen, combinecolors[board[i][j]], piece, 0)
-    
-    screen.blit(scorefont.render(str(score), True, gridcolor), scoreoffset)
     
     pygame.display.flip()
 
