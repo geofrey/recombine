@@ -32,6 +32,8 @@ dots = [] # dots
 
 pygame.init()
 scorefont = pygame.font.Font(pygame.font.get_default_font(), 14)
+
+pygame.display.set_caption('ReCombine')
 screen = pygame.display.set_mode((gridsize*boardwidth + 2*boardoffset, gridsize*(boardheight+2) + 3*boardoffset)) # ??
 
 window = screen.get_rect()
@@ -78,9 +80,10 @@ def stateEvent(state):
 
 # event loop
 
+animate = True
 stateEvent('idle')
 
-while True:
+while animate:
     start = time.clock()
 
     # check events
@@ -150,7 +153,7 @@ while True:
                         frametime = idletime
                         stateEvent('idle')
             elif event.state == 'gameover':
-                break
+                animate = False
 
     # draw everything on the board
     for prop in scene:
