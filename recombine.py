@@ -32,9 +32,8 @@ dots = [] # dots
 
 pygame.init()
 scorefont = pygame.font.Font(pygame.font.get_default_font(), 14)
-window = pygame.Rect(0, 0, gridsize*boardwidth + 2*boardoffset, gridsize*boardheight + 3*boardoffset)
 screen = pygame.display.set_mode((gridsize*boardwidth + 2*boardoffset, gridsize*(boardheight+2) + 3*boardoffset)) # ??
-#screen = pygame.display.set_mode(window...
+
 window = screen.get_rect()
 
 background = Animation(None, None)
@@ -115,7 +114,6 @@ while True:
             shutdown()
         
         if event.type == pygame.USEREVENT:
-            print(event.state)
             # update stuff
             if event.state == 'spinLeft' and drop:
                 drop = spin(drop, 'left')
