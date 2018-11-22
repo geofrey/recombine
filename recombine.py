@@ -55,7 +55,7 @@ scoredisplay = Animation(None, None)
 scoredisplay.draw = lambda: screen.blit(scorefont.render(str(score), True, gridcolor), scoreoffset)
 scene.append(scoredisplay)
 
-board = Board((boardheight, boardwidth), maxcolor)
+board = Board(screen, (boardheight, boardwidth), maxcolor)
 boardpos = pygame.Rect((boardoffset, 2*boardoffset), (boardwidth*gridsize, (boardheight+2)*gridsize))
 scoreoffset = (boardoffset, boardoffset)
 combinecolors = ['green', 'yellow', 'orange', 'red', 'magenta', 'purple', 'blue', 'cyan', 'black', 'white']
@@ -140,7 +140,7 @@ while animate:
                 groups = list(filter(validgroup, board.find_groups()))        
                 if len(groups) > 0:
                     for group in groups:
-                        groupcolor = board[group[0][0]][group[0][1]]
+                        groupcolor = board[group[0][0]][group[0][1]].color
                         currentcolor = max(board.replace_group(group), currentcolor)
                         score += combinescores[groupcolor]*len(group)
                     frametime = breaktime
@@ -190,9 +190,8 @@ while animate:
         piece.bottom = boardpos.bottom - i*gridsize
         for j in range(0, len(board.grid[0])):
             piece.left = boardpos.left + j*gridsize
-            if board[i][j] > 0:
-                #draw.rect(screen, combinecolors[board[i][j]], piece, 0)
-                draw.ellipse(screen, combinecolors[board[i][j]], piece, 0)
+            if board[i][j]:
+                draw.ellipse(screen, combinecolors[board[i][j].color], piece, 0)
     
     pygame.display.flip()
 
