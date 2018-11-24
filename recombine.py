@@ -26,6 +26,7 @@ score = 0
 
 # init
 
+background = set() # behind everything
 scene = set() # decorations
 dots = set() # dots
 
@@ -39,10 +40,10 @@ boardpos = pygame.Rect((boardoffset, 2*boardoffset), (boardwidth*gridsize, (boar
 board = Board(screen, boardpos, (boardheight, boardwidth), maxcolor, combinecolors)
 scoreoffset = (boardoffset, boardoffset)
 
-background = Animation(None, None)
-background.draw = lambda time: screen.fill(pygame.Color('gray'))
-background.ended = lambda time: False
-scene.add(background)
+grayfield = Animation(None, None)
+grayfield.draw = lambda time: screen.fill(pygame.Color('gray'))
+grayfield.ended = lambda time: False
+background.add(grayfield)
 
 heightlimit = Animation(None, None)
 heightlimit.draw = lambda time: draw.line(screen, gridcolor, (boardpos.left, boardpos.top + 2*gridsize), (boardpos.right, boardpos.top + 2*gridsize), 3)
@@ -100,6 +101,8 @@ while animate:
                 stateEvent('moveLeft')
             elif event.key == pygame.K_RIGHT:
                 stateEvent('moveRight')
+            elif event.key == pygame.K_ESCAPE:
+                stateEvent('gameover')
         if event.type == pygame.MOUSEMOTION:
             # game state is updated inside event handling to allow mouse+keyboard input
             ## Adjust mouse position by the border width, clip that at 0.
@@ -134,7 +137,6 @@ while animate:
             elif event.state == 'moving':
                 stateEvent('moving' if len(board.gravity())>0 else 'breaking')
             elif event.state == 'breaking':
-                stateEvent('idle')
                 groups = list(filter(validgroup, board.find_groups()))        
                 if len(groups) > 0:
                     for group in groups:
@@ -155,6 +157,8 @@ while animate:
                 animate = False
     
     # draw everything on the board
+    for distant in background:
+        distant.draw(start)
     for prop in scene:
         prop.draw(start)
         # these aren't going away
