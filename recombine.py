@@ -14,11 +14,10 @@ boardwidth = 7
 combinecolors = ['green', 'yellow', 'orange', 'red', 'magenta', 'purple', 'blue', 'cyan', 'black', 'white']
 combinecolors = [None] + list(map(pygame.Color, combinecolors)) # generate Color objects and put a placeholder in position 0
 combinescores = [None, 5, 10, 15, 35, 295, 305, 315, 325, 335, 670]
-currentcolor = 3
 frametime = 1.0/30
 gridsize = 40
 boardoffset = int(gridsize/2)
-maxcolor = 10
+maxcolor = len(combinecolors)-1
 mouse = (0, 0)
 turn = 0
 score = 0
@@ -57,7 +56,7 @@ scoredisplay = Animation(None, None)
 scoredisplay.draw = lambda time: screen.blit(scorefont.render(str(score), True, gridcolor), scoreoffset)
 scene.add(scoredisplay)
 
-drop = new_drop(currentcolor)
+drop = new_drop(board.currentcolor)
 dropindex = 0
 gridcolor = pygame.Color('white')
 outlinecolor = pygame.Color('black')
@@ -142,7 +141,6 @@ while animate:
                     for group in groups:
                         groupcolor = board[group[0][0]][group[0][1]].color
                         removed, inserted = board.replace_group(group)
-                        currentcolor = max(inserted.color, currentcolor)
                         dots.difference_update(removed)
                         dots.add(inserted)
                         score += combinescores[groupcolor]*len(group)
@@ -151,7 +149,7 @@ while animate:
                     if board.overheight():
                         stateEvent('gameover')
                     else:
-                        drop = new_drop(currentcolor)
+                        drop = new_drop(board.currentcolor)
                         stateEvent('idle')
             elif event.state == 'gameover':
                 animate = False
@@ -165,15 +163,7 @@ while animate:
     for dot in dots:
         dot.draw(start)
     
-    #colored blockies
-    
-    for level in range(1, currentcolor):
-        r = pygame.Rect(0,0,0,0)
-        r.top = 10
-        r.height = gridsize/2
-        r.left = boardwidth * gridsize - gridsize/2 * len(combinecolors) + gridsize/2 * level
-        r.width = gridsize/2
-        draw.ellipse(screen, combinecolors[level], pygame.Rect(r.left, r.top, r.width, r.height), 0)
+    board.draw(start)
     
     if drop:
         # draw drop

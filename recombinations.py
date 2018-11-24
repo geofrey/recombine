@@ -24,6 +24,7 @@ class Board:
         self.dimensions = dimensions
         self.grid = [[None for j in range(dimensions[0])] for i in range(dimensions[1]+2)]
         self.maxcolor = maxcolor
+        self.currentcolor = 2 # green + yellow
         self.drawingcolors = drawingcolors
     def __getitem__(self, i):
         return self.grid[i]
@@ -105,6 +106,7 @@ class Board:
             newball = Ball(self, remainder[1], len(self.grid)-remainder[0], groupcolor + 1)
             self.grid[remainder[0]][remainder[1]] = newball
             inserted = newball
+        self.currentcolor = max(inserted.color, self.currentcolor)
         return removed, inserted
     
     def overheight(self):
@@ -117,6 +119,16 @@ class Board:
             self.gridsize,
             self.gridsize)
         return rect
+    
+    def draw(self, time):
+        r = pygame.Rect(0,0,0,0)
+        r.top = self.grid_rect.top/2
+        r.height = self.gridsize/2
+        r.width = self.gridsize/2
+        for level in range(1, self.currentcolor):
+            #r.left = boardwidth * gridsize - gridsize/2 * len(combinecolors) + gridsize/2 * level
+            r.left = self.gridsize/2 * (self.dimensions[0]*2 - len(self.drawingcolors) + level)
+            draw.ellipse(self.screen, self.drawingcolors[level], pygame.Rect(r.left, r.top, r.width, r.height), 0)
 #</Board>
 
 import random
