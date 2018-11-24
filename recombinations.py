@@ -1,23 +1,30 @@
+import pygame
 from pygame import draw
 from abstract_animation import Animation
 import functools
 
 class Ball(Animation):
-    def __init__(self, screen, x, y, color):
-        self.screen = screen
+    def __init__(self, board, x, y, color):
+        self.board = board
+        self.color = color
         self.x = x
         self.y = y
-        self.color = color
     def draw(self, time):
-        draw.ellipse(self.screen, self.color, (self.x, self.y), 0)
+        draw.ellipse(self.board.screen, self.board.drawingcolors[self.color], self.board.get_rect(self.x, self.y), 0)
+    def __repr__(self):
+        return str(self.color)
 
 class Board:
     # dimensions - 2-tuple
-    def __init__(self, screen, dimensions, maxcolor):
+    def __init__(self, screen, drawing_area, dimensions, maxcolor, drawingcolors):
         self.screen = screen
+        self.grid_rect = drawing_area
+        self.gridsize = drawing_area.width / dimensions[0]
         # grid has 2 extra rows at the top for incoming drops
-        self.grid = [[None for j in range(dimensions[1])] for i in range(dimensions[0]+2)]
+        self.dimensions = dimensions
+        self.grid = [[None for j in range(dimensions[0])] for i in range(dimensions[1]+2)]
         self.maxcolor = maxcolor
+        self.drawingcolors = drawingcolors
     def __getitem__(self, i):
         return self.grid[i]
     def __setitem__(self, i, x):
@@ -49,16 +56,16 @@ class Board:
         return group
     
     def gravity(self):
-        moved = False
-        for j in range(len(self.grid[0])):
-            for src in range(1, len(self.grid)):
-                if not self.grid[src-1][j] and self.grid[src][j]:
-                    #self.grid[src-1][j] = self.grid[src][j]
-                    self.grid[src-1][j] = Ball(self.screen, src-1, j, self.grid[src][j].color)
-                    self.grid[src][j] = None
-                    moved = True
+        moved = set()
+        for i in range(len(self.grid)-1-1, 0-1, -1): # scan bottom-1 to top
+            for j in range(len(self.grid[0])):
+                if self.grid[i][j] and not self.grid[i+1][j]:
+                    self.grid[i+1][j] = self.grid[i][j]
+                    self.grid[i][j] = None
+                    self.grid[i+1][j].y -= 1
+                    moved.add(self.grid[i+1][j])
         return moved
-        
+    
     def find_groups(self):
         groups = []
         checked = []
@@ -72,29 +79,44 @@ class Board:
         return groups
     
     def insert(self, incoming, index):
-        self.grid[-1] = [None for j in range(len(self.grid[0]))]
-        self.grid[-2] = [None for j in range(len(self.grid[0]))]
-        offset = min(index, len(self.grid[0]) - len(incoming[0]))
+        balls = [] # giggle
         for i in range(len(incoming)):
             for j in range(len(incoming[0])):
-                self.grid[-2 + i][offset + j] = Ball(self.screen, i, j, incoming[i][j])
+                if incoming[i][j]:
+                    x,y = index+j, self.dimensions[1]+2-i
+                    ball = Ball(self, x, y, incoming[i][j])
+                    self.grid[i][index+j] = ball
+                    balls.append(ball)
+        return balls
     
     def replace_group(self, group):
         # zero out and find the lowest, leftmost piece
-        remainder = (len(self.grid), len(self.grid[0]))
+        remainder = (0, len(self.grid[0])) # top right
         groupcolor = self.grid[group[0][0]][group[0][1]].color # color to replace with
+        removed = []
         for piece in group:
+            removed.append(self.grid[piece[0]][piece[1]])
             self.grid[piece[0]][piece[1]] = None
-            if piece[0] < remainder[0]:
+            if piece[0] > remainder[0]:
                 remainder = piece
             if piece[0] == remainder[0] and piece[1] < remainder[1]:
                 remainder = piece
         if groupcolor < self.maxcolor:
-            self.grid[remainder[0]][remainder[1]] = Ball(self.screen, remainder[0], remainder[1], groupcolor + 1)
-        return min(groupcolor + 1, self.maxcolor)
+            newball = Ball(self, remainder[1], len(self.grid)-remainder[0], groupcolor + 1)
+            self.grid[remainder[0]][remainder[1]] = newball
+            inserted = newball
+        return removed, inserted
     
     def overheight(self):
-        return functools.reduce(lambda accum, item: accum or item != None, self.grid[-2], False)
+        return functools.reduce(lambda accum, item: accum or item != None, self.grid[1], False)
+    
+    def get_rect(self, x, y):
+        rect = pygame.Rect(
+            self.grid_rect.left + x*self.gridsize, 
+            self.grid_rect.bottom - y*self.gridsize,
+            self.gridsize,
+            self.gridsize)
+        return rect
 #</Board>
 
 import random

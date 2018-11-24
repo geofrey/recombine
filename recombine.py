@@ -11,12 +11,11 @@ from abstract_animation import Animation
 
 boardheight = 7
 boardwidth = 7
+combinecolors = ['green', 'yellow', 'orange', 'red', 'magenta', 'purple', 'blue', 'cyan', 'black', 'white']
+combinecolors = [None] + list(map(pygame.Color, combinecolors)) # generate Color objects and put a placeholder in position 0
+combinescores = [None, 5, 10, 15, 35, 295, 305, 315, 325, 335, 670]
 currentcolor = 3
-frame = 1.0/30
-idletime = 1 * frame
-droptime = 2 * frame
-breaktime = 15 * frame
-frametime = idletime # initial
+frametime = 1.0/30
 gridsize = 40
 boardoffset = int(gridsize/2)
 maxcolor = 10
@@ -27,8 +26,8 @@ score = 0
 
 # init
 
-scene = [] # decorations
-dots = [] # dots
+scene = set() # decorations
+dots = set() # dots
 
 pygame.init()
 scorefont = pygame.font.Font(pygame.font.get_default_font(), 14)
@@ -36,31 +35,27 @@ scorefont = pygame.font.Font(pygame.font.get_default_font(), 14)
 pygame.display.set_caption('ReCombine')
 screen = pygame.display.set_mode((gridsize*boardwidth + 2*boardoffset, gridsize*(boardheight+2) + 3*boardoffset)) # ??
 
-window = screen.get_rect()
+boardpos = pygame.Rect((boardoffset, 2*boardoffset), (boardwidth*gridsize, (boardheight+2)*gridsize))
+board = Board(screen, boardpos, (boardheight, boardwidth), maxcolor, combinecolors)
+scoreoffset = (boardoffset, boardoffset)
 
 background = Animation(None, None)
-background.draw = lambda: screen.fill(pygame.Color('gray'))
-background.ended = lambda: False
-scene.append(background)
+background.draw = lambda time: screen.fill(pygame.Color('gray'))
+background.ended = lambda time: False
+scene.add(background)
 
 heightlimit = Animation(None, None)
-heightlimit.draw = lambda: draw.line(screen, gridcolor, (boardpos.left, boardpos.top + 2*gridsize), (boardpos.right, boardpos.top + 2*gridsize), 3)
-scene.append(heightlimit)
+heightlimit.draw = lambda time: draw.line(screen, gridcolor, (boardpos.left, boardpos.top + 2*gridsize), (boardpos.right, boardpos.top + 2*gridsize), 3)
+scene.add(heightlimit)
 
 border = Animation(None, None)
-border.draw = lambda: draw.rect(screen, outlinecolor, boardpos, 4)
-scene.append(border)
+border.draw = lambda time: draw.rect(screen, outlinecolor, boardpos, 4)
+scene.add(border)
 
 scoredisplay = Animation(None, None)
-scoredisplay.draw = lambda: screen.blit(scorefont.render(str(score), True, gridcolor), scoreoffset)
-scene.append(scoredisplay)
+scoredisplay.draw = lambda time: screen.blit(scorefont.render(str(score), True, gridcolor), scoreoffset)
+scene.add(scoredisplay)
 
-board = Board(screen, (boardheight, boardwidth), maxcolor)
-boardpos = pygame.Rect((boardoffset, 2*boardoffset), (boardwidth*gridsize, (boardheight+2)*gridsize))
-scoreoffset = (boardoffset, boardoffset)
-combinecolors = ['green', 'yellow', 'orange', 'red', 'magenta', 'purple', 'blue', 'cyan', 'black', 'white']
-combinecolors = [None] + list(map(pygame.Color, combinecolors)) # generate Color objects and put a placeholder in position 0
-combinescores = [None, 5, 10, 15, 35, 295, 305, 315, 325, 335, 670]
 drop = new_drop(currentcolor)
 dropindex = 0
 gridcolor = pygame.Color('white')
@@ -71,8 +66,8 @@ validgroup = lambda l: len(l)>=3
 def shutdown():
     pygame.event.clear()
     pygame.quit()
-    print(turn, 'turns')
-    print(score, 'points')
+    print(str(turn) + ' turns')
+    print(str(score) + ' points')
     quit()
 
 def stateEvent(state):
@@ -106,17 +101,20 @@ while animate:
             elif event.key == pygame.K_RIGHT:
                 stateEvent('moveRight')
         if event.type == pygame.MOUSEMOTION:
-            mouse = event.pos
             # game state is updated inside event handling to allow mouse+keyboard input
             ## Adjust mouse position by the border width, clip that at 0.
             ## Scale down by the size of each square and clip that at piece-width away from the right edge.
             dropwidth = len(drop[0]) if drop else 0
-            dropindex = min(max(mouse[0]-boardoffset, 0) // gridsize, boardwidth - dropwidth)
+            dropindex = min(max(event.pos[0]-boardoffset, 0) // gridsize, boardwidth - dropwidth)
         
         if event.type == pygame.QUIT:
             shutdown()
         
         if event.type == pygame.USEREVENT:
+            #print(event.state)
+            #print('')
+            #print('\n'.join(map(lambda row: ' '.join(map(lambda ball: str(ball) if ball else '.', row)), board.grid)))
+            
             # update stuff
             if event.state == 'spinLeft' and drop:
                 drop = spin(drop, 'left')
@@ -127,40 +125,41 @@ while animate:
             elif event.state == 'moveRight' and drop:
                 dropindex = min(dropindex + 1, boardwidth - len(drop[0]))
             elif event.state == 'drop' and drop:
-                board.insert(drop, dropindex)
+                added = board.insert(drop, dropindex)
+                dots.update(added)
                 drop = None
                 turn += 1
                 stateEvent('moving')
             
             elif event.state == 'moving':
-                stateEvent('moving' if board.gravity() else 'breaking')
-                frametime = droptime
+                stateEvent('moving' if len(board.gravity())>0 else 'breaking')
             elif event.state == 'breaking':
                 stateEvent('idle')
                 groups = list(filter(validgroup, board.find_groups()))        
                 if len(groups) > 0:
                     for group in groups:
                         groupcolor = board[group[0][0]][group[0][1]].color
-                        currentcolor = max(board.replace_group(group), currentcolor)
+                        removed, inserted = board.replace_group(group)
+                        currentcolor = max(inserted.color, currentcolor)
+                        dots.difference_update(removed)
+                        dots.add(inserted)
                         score += combinescores[groupcolor]*len(group)
-                    frametime = breaktime
                     stateEvent('moving')
                 else:
                     if board.overheight():
                         stateEvent('gameover')
                     else:
                         drop = new_drop(currentcolor)
-                        frametime = idletime
                         stateEvent('idle')
             elif event.state == 'gameover':
                 animate = False
-
+    
     # draw everything on the board
     for prop in scene:
-        prop.draw()
+        prop.draw(start)
         # these aren't going away
     for dot in dots:
-        dot.draw()
+        dot.draw(start)
     
     #colored blockies
     
@@ -171,27 +170,14 @@ while animate:
         r.left = boardwidth * gridsize - gridsize/2 * len(combinecolors) + gridsize/2 * level
         r.width = gridsize/2
         draw.ellipse(screen, combinecolors[level], pygame.Rect(r.left, r.top, r.width, r.height), 0)
-        
-    piece = pygame.Rect(boardpos) # to be reused
-    piece.width = piece.height = gridsize
     
     if drop:
         # draw drop
         for i in range(0, len(drop)):
             for j in range(0, len(drop[0])):
-                piece.top = boardpos.top + (1 - i)*gridsize
-                offset = min(dropindex, boardwidth - len(drop[0]))
-                piece.left = boardpos.left + (j + offset)*gridsize
-                draw.ellipse(screen, combinecolors[drop[i][j]], piece, 0)
-    
-    # draw pieces
-    
-    for i in range(0, len(board.grid)):
-        piece.bottom = boardpos.bottom - i*gridsize
-        for j in range(0, len(board.grid[0])):
-            piece.left = boardpos.left + j*gridsize
-            if board[i][j]:
-                draw.ellipse(screen, combinecolors[board[i][j].color], piece, 0)
+                if drop[i][j]:
+                    draw.ellipse(screen, combinecolors[drop[i][j]], board.get_rect(dropindex+j, boardheight+2-i), 0)
+   
     
     pygame.display.flip()
 
