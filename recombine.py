@@ -18,9 +18,7 @@ frametime = 1.0/30
 gridsize = 40
 boardoffset = int(gridsize/2)
 maxcolor = len(combinecolors)-1
-mouse = (0, 0)
 turn = 0
-score = 0
 
 
 # init
@@ -30,36 +28,15 @@ scene = set() # decorations
 dots = set() # dots
 
 pygame.init()
-scorefont = pygame.font.Font(pygame.font.get_default_font(), 14)
 
 pygame.display.set_caption('ReCombine')
 screen = pygame.display.set_mode((gridsize*boardwidth + 2*boardoffset, gridsize*(boardheight+2) + 3*boardoffset)) # ??
 
 boardpos = pygame.Rect((boardoffset, 2*boardoffset), (boardwidth*gridsize, (boardheight+2)*gridsize))
-board = Board(screen, boardpos, (boardheight, boardwidth), maxcolor, combinecolors)
-scoreoffset = (boardoffset, boardoffset)
-
-grayfield = Animation(None, None)
-grayfield.draw = lambda time: screen.fill(pygame.Color('gray'))
-grayfield.ended = lambda time: False
-background.add(grayfield)
-
-heightlimit = Animation(None, None)
-heightlimit.draw = lambda time: draw.line(screen, gridcolor, (boardpos.left, boardpos.top + 2*gridsize), (boardpos.right, boardpos.top + 2*gridsize), 3)
-scene.add(heightlimit)
-
-border = Animation(None, None)
-border.draw = lambda time: draw.rect(screen, outlinecolor, boardpos, 4)
-scene.add(border)
-
-scoredisplay = Animation(None, None)
-scoredisplay.draw = lambda time: screen.blit(scorefont.render(str(score), True, gridcolor), scoreoffset)
-scene.add(scoredisplay)
+board = Board(screen, boardpos, (boardheight, boardwidth), maxcolor, combinecolors, combinescores)
 
 drop = new_drop(board.currentcolor)
 dropindex = 0
-gridcolor = pygame.Color('white')
-outlinecolor = pygame.Color('black')
 
 validgroup = lambda l: len(l)>=3
 
@@ -67,7 +44,7 @@ def shutdown():
     pygame.event.clear()
     pygame.quit()
     print(str(turn) + ' turns')
-    print(str(score) + ' points')
+    print(str(board.score) + ' points')
     quit()
 
 def stateEvent(state):
@@ -143,7 +120,6 @@ while animate:
                         removed, inserted = board.replace_group(group)
                         dots.difference_update(removed)
                         dots.add(inserted)
-                        score += combinescores[groupcolor]*len(group)
                     stateEvent('moving')
                 else:
                     if board.overheight():
@@ -154,17 +130,8 @@ while animate:
             elif event.state == 'gameover':
                 animate = False
     
-    # draw everything on the board
-    for distant in background:
-        distant.draw(start)
-    for prop in scene:
-        prop.draw(start)
-        # these aren't going away
-    for dot in dots:
-        dot.draw(start)
-    
+    # draw everything
     board.draw(start)
-    
     if drop:
         # draw drop
         for i in range(0, len(drop)):
@@ -179,6 +146,7 @@ while animate:
 
     elapsed = time.clock() - start
     if elapsed < frametime:
+        # frame rate throttle
         time.sleep(frametime - elapsed)
 
 # finally

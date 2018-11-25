@@ -16,7 +16,7 @@ class Ball(Animation):
 
 class Board:
     # dimensions - 2-tuple
-    def __init__(self, screen, drawing_area, dimensions, maxcolor, drawingcolors):
+    def __init__(self, screen, drawing_area, dimensions, maxcolor, drawingcolors, basescores):
         self.screen = screen
         self.grid_rect = drawing_area
         self.gridsize = drawing_area.width / dimensions[0]
@@ -26,6 +26,32 @@ class Board:
         self.maxcolor = maxcolor
         self.currentcolor = 2 # green + yellow
         self.drawingcolors = drawingcolors
+        self.scorevalues = basescores
+        self.score = 0
+        
+        self.init_decorations()
+    
+    def init_decorations(self):
+        self.background = Animation(None, None)
+        self.background.draw = lambda time: self.screen.fill(pygame.Color('gray'))
+        self.background.ended = lambda time: False
+        
+        self.decorations = set()
+        
+        whitecolor = pygame.Color('white')
+        heightlimit = Animation(None, None)
+        heightlimit.draw = lambda time: draw.line(self.screen, whitecolor, (self.grid_rect.left, self.grid_rect.top + 2*self.dimensions[1]*self.gridsize), (self.grid_rect.right, self.grid_rect.top + 2*self.dimensions[1]*self.gridsize), 3)
+        self.decorations.add(heightlimit)
+        
+        border = Animation(None, None)
+        border.draw = lambda time: draw.rect(self.screen, pygame.Color('black'), self.grid_rect, 4)
+        self.decorations.add(border)
+        
+        scoredisplay = Animation(None, None)
+        scorefont = pygame.font.Font(pygame.font.get_default_font(), 14)
+        scoredisplay.draw = lambda time: self.screen.blit(scorefont.render(str(self.score), True, whitecolor), (self.grid_rect.left, self.grid_rect.left))
+        self.decorations.add(scoredisplay)
+    
     def __getitem__(self, i):
         return self.grid[i]
     def __setitem__(self, i, x):
@@ -93,7 +119,7 @@ class Board:
     def replace_group(self, group):
         # zero out and find the lowest, leftmost piece
         remainder = (0, len(self.grid[0])) # top right
-        groupcolor = self.grid[group[0][0]][group[0][1]].color # color to replace with
+        groupcolor = self.grid[group[0][0]][group[0][1]].color
         removed = []
         for piece in group:
             removed.append(self.grid[piece[0]][piece[1]])
@@ -107,6 +133,7 @@ class Board:
             self.grid[remainder[0]][remainder[1]] = newball
             inserted = newball
         self.currentcolor = max(inserted.color, self.currentcolor)
+        self.score += self.scorevalues[groupcolor]*len(group)
         return removed, inserted
     
     def overheight(self):
@@ -121,6 +148,12 @@ class Board:
         return rect
     
     def draw(self, time):
+        # draw everything on the board
+        self.background.draw(time)
+        for prop in self.decorations:
+            prop.draw(time)
+        
+        # TODO pre-generate the score indicator and just hide the balls until they're needed
         r = pygame.Rect(0,0,0,0)
         r.top = self.grid_rect.top/2
         r.height = self.gridsize/2
@@ -129,6 +162,11 @@ class Board:
             #r.left = boardwidth * gridsize - gridsize/2 * len(combinecolors) + gridsize/2 * level
             r.left = self.gridsize/2 * (self.dimensions[0]*2 - len(self.drawingcolors) + level)
             draw.ellipse(self.screen, self.drawingcolors[level], pygame.Rect(r.left, r.top, r.width, r.height), 0)
+        
+        for i in range(len(self.grid)):
+            for j in range(len(self.grid[0])):
+                if self.grid[i][j]:
+                    self.grid[i][j].draw(time)
 #</Board>
 
 import random
