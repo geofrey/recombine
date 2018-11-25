@@ -1,12 +1,12 @@
 class Animation:
     def __init__(self, starttime, endtime):
-        self.start = starttime
-        self.end = endtime
+        self.starttime = starttime
+        self.endtime = endtime
     def draw(self, time):
         pass
     def started(self, time):
-        return time > self.start
+        return time > self.starttime
     def ended(self, time):
-        return time > self.end
+        return time > self.endtime
     def progress(self, time):
-        return float(time - self.start)/(self.end - self.start)
+        return float(time - self.starttime)/(self.endtime - self.starttime)
