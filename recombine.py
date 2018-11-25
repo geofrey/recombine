@@ -21,12 +21,6 @@ maxcolor = len(combinecolors)-1
 turn = 0
 
 
-# init
-
-background = set() # behind everything
-scene = set() # decorations
-dots = set() # dots
-
 pygame.init()
 
 pygame.display.set_caption('ReCombine')
@@ -105,7 +99,6 @@ while animate:
                 dropindex = min(dropindex + 1, boardwidth - len(drop[0]))
             elif event.state == 'drop' and drop:
                 added = board.insert(drop, dropindex)
-                dots.update(added)
                 drop = None
                 turn += 1
                 stateEvent('moving')
@@ -118,8 +111,6 @@ while animate:
                     for group in groups:
                         groupcolor = board[group[0][0]][group[0][1]].color
                         removed, inserted = board.replace_group(group)
-                        dots.difference_update(removed)
-                        dots.add(inserted)
                     stateEvent('moving')
                 else:
                     if board.overheight():
