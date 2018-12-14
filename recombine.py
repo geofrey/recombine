@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import pygame
 from pygame import rect, draw, event
@@ -47,10 +47,9 @@ def stateEvent(state):
 # event loop
 
 animate = True
-stateEvent('idle')
 
 while animate:
-    start = time.clock()
+    start = time.time()
 
     # check events
     for event in pygame.event.get():
@@ -73,6 +72,7 @@ while animate:
                 stateEvent('moveRight')
             elif event.key == pygame.K_ESCAPE:
                 stateEvent('gameover')
+        
         if event.type == pygame.MOUSEMOTION:
             # game state is updated inside event handling to allow mouse+keyboard input
             ## Adjust mouse position by the border width, clip that at 0.
@@ -105,7 +105,13 @@ while animate:
                 stateEvent('moving')
             
             elif event.state == 'moving':
-                stateEvent('moving' if len(board.gravity())>0 else 'breaking')
+                if board.ended(start):
+                    if board.gravity():
+                        stateEvent('moving')
+                    else:
+                        stateEvent('breaking')
+                else:
+                    stateEvent('moving')
             elif event.state == 'breaking':
                 groups = list(filter(validgroup, board.find_groups()))        
                 if len(groups) > 0:
@@ -117,13 +123,19 @@ while animate:
                     if board.overheight():
                         stateEvent('gameover')
                     else:
-                        drop = new_drop(board.currentcolor)
-                        stateEvent('idle')
+                        stateEvent('ready')
+            elif event.state == 'ready':
+                if board.ended(start):
+                    drop = new_drop(board.currentcolor)
+                else:
+                    stateEvent('ready')
             elif event.state == 'gameover':
                 animate = False
     
     # draw everything
     board.draw(start)
+    
+    # TODO stop doing this manually
     if drop:
         # draw drop
         for i in range(0, len(drop)):
@@ -136,7 +148,7 @@ while animate:
 
     #timing
 
-    elapsed = time.clock() - start
+    elapsed = time.time() - start
     if elapsed < frametime:
         # frame rate throttle
         time.sleep(frametime - elapsed)

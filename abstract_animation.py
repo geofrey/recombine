@@ -5,7 +5,7 @@ class Animation:
     def draw(self, time):
         pass
     def started(self, time):
-        return time > self.starttime
+        return time >= self.starttime
     def ended(self, time):
         return time > self.endtime
     def progress(self, time):

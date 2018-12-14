@@ -2,17 +2,37 @@ import pygame
 from pygame import draw
 from abstract_animation import Animation
 import functools
+import time
 
 class Ball(Animation):
-    def __init__(self, board, x, y, color):
+    def __init__(self, board, location, color):
+        super().__init__(1,2)
         self.board = board
         self.color = color
-        self.x = x
-        self.y = y
+        self.prior_location = None
+        self.location = self.board.get_rect(*location)
     def draw(self, time):
-        draw.ellipse(self.board.screen, self.board.drawingcolors[self.color], self.board.get_rect(self.x, self.y), 0)
+        if self.ended(time):
+            self.prior_location = None
+        if self.prior_location:
+            pseudoprogress = self.progress(time)
+            currentlocation = self.prior_location.move((self.location.left - self.prior_location.left)*pseudoprogress, (self.location.top - self.prior_location.top)*pseudoprogress)
+        else:
+            currentlocation = self.location
+        draw.ellipse(self.board.screen, self.board.drawingcolors[self.color], currentlocation, 0)
+    def ended(self, time):
+        if self.prior_location:
+            return super().ended(time)
+        else:
+            return True
+    def move_to(self, destinationxy, starttime, endtime):
+        self.starttime = starttime
+        self.endtime = endtime
+        self.prior_location = self.location
+        self.location = self.board.get_rect(*destinationxy)
     def __repr__(self):
         return str(self.color)
+#</Ball>
 
 class Board:
     # dimensions - 2-tuple
@@ -40,7 +60,7 @@ class Board:
         
         whitecolor = pygame.Color('white')
         heightlimit = Animation(None, None)
-        heightlimit.draw = lambda time: draw.line(self.screen, whitecolor, (self.grid_rect.left, self.grid_rect.top + 2*self.dimensions[1]*self.gridsize), (self.grid_rect.right, self.grid_rect.top + 2*self.dimensions[1]*self.gridsize), 3)
+        heightlimit.draw = lambda time: draw.line(self.screen, whitecolor, (self.grid_rect.left, self.grid_rect.top + 2*self.gridsize), (self.grid_rect.right, self.grid_rect.top + 2*self.gridsize), 3)
         self.decorations.add(heightlimit)
         
         border = Animation(None, None)
@@ -51,6 +71,14 @@ class Board:
         scorefont = pygame.font.Font(pygame.font.get_default_font(), 14)
         scoredisplay.draw = lambda time: self.screen.blit(scorefont.render(str(self.score), True, whitecolor), (self.grid_rect.left, self.grid_rect.left))
         self.decorations.add(scoredisplay)
+    
+    def ended(self, time):
+        for i in range(len(self.grid)):
+            for j in range(len(self.grid[0])):
+                if self.grid[i][j] != None:
+                    if not self.grid[i][j].ended(time):
+                        return False
+        return True
     
     def __getitem__(self, i):
         return self.grid[i]
@@ -83,14 +111,16 @@ class Board:
         return group
     
     def gravity(self):
-        moved = set()
+        moved = False
         for i in range(len(self.grid)-1-1, 0-1, -1): # scan bottom-1 to top
             for j in range(len(self.grid[0])):
                 if self.grid[i][j] and not self.grid[i+1][j]:
-                    self.grid[i+1][j] = self.grid[i][j]
+                    to_drop = self.grid[i][j]
+                    self.grid[i+1][j] = to_drop
                     self.grid[i][j] = None
-                    self.grid[i+1][j].y -= 1
-                    moved.add(self.grid[i+1][j])
+                    #self.grid[i+1][j].y -= 1
+                    to_drop.move_to((j, len(self.grid)-i-1), time.time(), time.time()+0.20)
+                    moved = True
         return moved
     
     def find_groups(self):
@@ -111,7 +141,7 @@ class Board:
             for j in range(len(incoming[0])):
                 if incoming[i][j]:
                     x,y = index+j, self.dimensions[1]+2-i
-                    ball = Ball(self, x, y, incoming[i][j])
+                    ball = Ball(self, (x, y), incoming[i][j])
                     self.grid[i][index+j] = ball
                     balls.append(ball)
         return balls
@@ -129,7 +159,7 @@ class Board:
             if piece[0] == remainder[0] and piece[1] < remainder[1]:
                 remainder = piece
         if groupcolor < self.maxcolor:
-            newball = Ball(self, remainder[1], len(self.grid)-remainder[0], groupcolor + 1)
+            newball = Ball(self, (remainder[1], len(self.grid)-remainder[0]), groupcolor + 1)
             self.grid[remainder[0]][remainder[1]] = newball
             inserted = newball
         self.currentcolor = max(inserted.color, self.currentcolor)
@@ -188,4 +218,4 @@ def spin(old, direction):
             new = [[old[0][1]], [old[0][0]]]
         elif direction == 'right':
             new = [[old[0][0]], [old[0][1]]]
-    return new
+    return new 
