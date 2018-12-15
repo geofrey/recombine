@@ -119,7 +119,7 @@ class Board:
                     self.grid[i+1][j] = to_drop
                     self.grid[i][j] = None
                     #self.grid[i+1][j].y -= 1
-                    to_drop.move_to((j, len(self.grid)-i-1), time.time(), time.time()+0.20)
+                    to_drop.move_to((j, len(self.grid)-i-1), time.time(), time.time()+0.10)
                     moved = True
         return moved
     
