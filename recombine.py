@@ -99,13 +99,13 @@ while animate:
             elif event.state == 'moveRight' and drop:
                 dropindex = min(dropindex + 1, boardwidth - len(drop[0]))
             elif event.state == 'drop' and drop:
+                dropindex = max(0, min(dropindex, boardwidth - len(drop[0])))
                 added = board.insert(drop, dropindex)
                 drop = None
                 turn += 1
                 stateEvent('moving')
             elif event.state == 'newdrop':
                 drop = new_drop(board.currentcolor)
-                dropindex = max(0, min(dropindex, boardwidth - len(drop[0])))
             
             elif event.state == 'moving':
                 if board.ended(start):
