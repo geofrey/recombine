@@ -103,6 +103,9 @@ while animate:
                 drop = None
                 turn += 1
                 stateEvent('moving')
+            elif event.state == 'newdrop':
+                drop = new_drop(board.currentcolor)
+                dropindex = max(0, min(dropindex, boardwidth - len(drop[0])))
             
             elif event.state == 'moving':
                 if board.ended(start):
@@ -126,7 +129,7 @@ while animate:
                         stateEvent('ready')
             elif event.state == 'ready':
                 if board.ended(start):
-                    drop = new_drop(board.currentcolor)
+                    stateEvent('newdrop')
                 else:
                     stateEvent('ready')
             elif event.state == 'gameover':
