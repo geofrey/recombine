@@ -162,7 +162,9 @@ class Board:
             newball = Ball(self, (remainder[1], len(self.grid)-remainder[0]), groupcolor + 1)
             self.grid[remainder[0]][remainder[1]] = newball
             inserted = newball
-        self.currentcolor = max(inserted.color, self.currentcolor)
+        else:
+            inserted = None
+        self.currentcolor = max(inserted.color if inserted else 0, self.currentcolor)
         self.score += self.scorevalues[groupcolor]*len(group)
         return removed, inserted
     
