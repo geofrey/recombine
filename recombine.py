@@ -32,8 +32,6 @@ board = Board(screen, boardpos, (boardheight, boardwidth), maxcolor, combinecolo
 drop = new_drop(board.currentcolor)
 dropindex = 0
 
-validgroup = lambda l: len(l)>=3
-
 def shutdown():
     pygame.event.clear()
     pygame.quit()
@@ -109,24 +107,14 @@ while animate:
             
             elif event.state == 'moving':
                 if board.ended(start):
-                    if board.gravity():
+                    if board.physics():
                         stateEvent('moving')
-                    else:
-                        stateEvent('breaking')
-                else:
-                    stateEvent('moving')
-            elif event.state == 'breaking':
-                groups = list(filter(validgroup, board.find_groups()))        
-                if len(groups) > 0:
-                    for group in groups:
-                        groupcolor = board[group[0][0]][group[0][1]].color
-                        removed, inserted = board.replace_group(group)
-                    stateEvent('moving')
-                else:
-                    if board.overheight():
+                    elif board.overheight():
                         stateEvent('gameover')
                     else:
                         stateEvent('ready')
+                else:
+                    stateEvent('moving')
             elif event.state == 'ready':
                 if board.ended(start):
                     stateEvent('newdrop')

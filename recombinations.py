@@ -85,6 +85,19 @@ class Board:
     def __setitem__(self, i, x):
         self.grid[i] = x
     
+    def gravity(self):
+        moved = False
+        for i in range(len(self.grid)-1-1, 0-1, -1): # scan bottom-1 to top
+            for j in range(len(self.grid[0])):
+                if self.grid[i][j] and not self.grid[i+1][j]:
+                    to_drop = self.grid[i][j]
+                    self.grid[i+1][j] = to_drop
+                    self.grid[i][j] = None
+                    #self.grid[i+1][j].y -= 1
+                    to_drop.move_to((j, len(self.grid)-i-1), time.time(), time.time()+0.10)
+                    moved = True
+        return moved
+    
     def get_neighbors(self, i, j):
         neighbors = []
         if i > 0:
@@ -110,21 +123,7 @@ class Board:
                 self.find_group_rec(n[0], n[1], group, color)
         return group
     
-    def gravity(self):
-        moved = False
-        for i in range(len(self.grid)-1-1, 0-1, -1): # scan bottom-1 to top
-            for j in range(len(self.grid[0])):
-                if self.grid[i][j] and not self.grid[i+1][j]:
-                    to_drop = self.grid[i][j]
-                    self.grid[i+1][j] = to_drop
-                    self.grid[i][j] = None
-                    #self.grid[i+1][j].y -= 1
-                    to_drop.move_to((j, len(self.grid)-i-1), time.time(), time.time()+0.10)
-                    moved = True
-        return moved
-    
     def find_groups(self):
-        groups = []
         checked = []
         for i in range(len(self.grid)):
             for j in range(len(self.grid[0])):
@@ -132,20 +131,8 @@ class Board:
                     group = self.find_group(i, j)
                     checked += group
                     if len(group) > 0:
-                        groups.append(group)
-        return groups
-    
-    def insert(self, incoming, index):
-        balls = [] # giggle
-        for i in range(len(incoming)):
-            for j in range(len(incoming[0])):
-                if incoming[i][j]:
-                    x,y = index+j, self.dimensions[1]+2-i
-                    ball = Ball(self, (x, y), incoming[i][j])
-                    self.grid[i][index+j] = ball
-                    balls.append(ball)
-        return balls
-    
+                        yield group
+        
     def replace_group(self, group):
         # zero out and find the lowest, leftmost piece
         remainder = (0, len(self.grid[0])) # top right
@@ -167,6 +154,29 @@ class Board:
         self.currentcolor = max(inserted.color if inserted else 0, self.currentcolor)
         self.score += self.scorevalues[groupcolor]*len(group)
         return removed, inserted
+    
+    def physics(self):
+        if self.gravity():
+            return True
+        else:
+            groups = list(filter(lambda l: len(l)>=3, self.find_groups()))
+            if groups:
+                for group in groups:
+                    self.replace_group(group)
+                return True
+            else:
+                return False
+    
+    def insert(self, incoming, index):
+        balls = [] # giggle
+        for i in range(len(incoming)):
+            for j in range(len(incoming[0])):
+                if incoming[i][j]:
+                    x,y = index+j, self.dimensions[1]+2-i
+                    ball = Ball(self, (x, y), incoming[i][j])
+                    self.grid[i][index+j] = ball
+                    balls.append(ball)
+        return balls
     
     def overheight(self):
         return functools.reduce(lambda accum, item: accum or item != None, self.grid[1], False)
