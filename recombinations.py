@@ -12,31 +12,31 @@ class Ball(Animation):
         self.prior_location = None
         self.location = self.board.get_rect(*location)
         self.draw = self.draw_static
-    def draw_static(self, time):
+    def draw_static(self, frame):
         draw.ellipse(self.board.screen, self.board.drawingcolors[self.color], self.location, 0)
-    def draw_moving(self, time):
-        if self.ended(time):
+    def draw_moving(self, frame):
+        if self.ended(frame):
             self.draw = self.draw_static
-            self.draw(time)
+            self.draw(frame)
         else:
-            pseudoprogress = self.progress(time)
+            pseudoprogress = self.progress(frame)
             currentlocation = self.prior_location.move((self.location.left - self.prior_location.left)*pseudoprogress, (self.location.top - self.prior_location.top)*pseudoprogress)
             draw.ellipse(self.board.screen, self.board.drawingcolors[self.color], currentlocation, 0)
-    def draw_appearing(self, time):
-        if self.ended(time):
+    def draw_appearing(self, frame):
+        if self.ended(frame):
             self.draw = self.draw_static
-            self.draw(time)
+            self.draw(frame)
         else:
-            scale = self.progress(time)-1.0
+            scale = self.progress(frame)-1.0
             currentdimensions = self.location.inflate(scale*self.location.width, scale*self.location.height)
             draw.ellipse(self.board.screen, self.board.drawingcolors[self.color], currentdimensions, 0)
-    def draw_nothing(self, time):
+    def draw_nothing(self, frame):
         pass
-    def draw_vanishing(self, time):
-        if self.ended(time):
+    def draw_vanishing(self, frame):
+        if self.ended(frame):
             self.draw = self.draw_nothing
         else:
-            scale = 0.0-self.progress(time)
+            scale = 0.0-self.progress(frame)
             currentdimensions = self.location.inflate(scale*self.location.width, scale*self.location.height)
             draw.ellipse(self.board.screen, self.board.drawingcolors[self.color], currentdimensions, 0)
     def move_to(self, destinationxy, starttime, endtime):
@@ -76,32 +76,32 @@ class Board:
     
     def init_decorations(self):
         self.background = Animation(None, None)
-        self.background.draw = lambda time: self.screen.fill(pygame.Color('gray'))
-        self.background.ended = lambda time: False
+        self.background.draw = lambda frame: self.screen.fill(pygame.Color('gray'))
+        self.background.ended = lambda frame: False
         
         self.decorations = set()
         
         whitecolor = pygame.Color('white')
         heightlimit = Animation(None, None)
-        heightlimit.draw = lambda time: draw.line(self.screen, whitecolor, (self.grid_rect.left, self.grid_rect.top + 2*self.gridsize), (self.grid_rect.right, self.grid_rect.top + 2*self.gridsize), 3)
+        heightlimit.draw = lambda frame: draw.line(self.screen, whitecolor, (self.grid_rect.left, self.grid_rect.top + 2*self.gridsize), (self.grid_rect.right, self.grid_rect.top + 2*self.gridsize), 3)
         self.decorations.add(heightlimit)
         
         border = Animation(None, None)
-        border.draw = lambda time: draw.rect(self.screen, pygame.Color('black'), self.grid_rect, 4)
+        border.draw = lambda frame: draw.rect(self.screen, pygame.Color('black'), self.grid_rect, 4)
         self.decorations.add(border)
         
         scoredisplay = Animation(None, None)
         scorefont = pygame.font.Font(pygame.font.get_default_font(), 14)
-        scoredisplay.draw = lambda time: self.screen.blit(scorefont.render(str(self.score), True, whitecolor), (self.grid_rect.left, self.grid_rect.left))
+        scoredisplay.draw = lambda frame: self.screen.blit(scorefont.render(str(self.score), True, whitecolor), (self.grid_rect.left, self.grid_rect.left))
         self.decorations.add(scoredisplay)
         
         self.temporary_objects = set() # need a place to store vanishing balls since they're not in the grid anymore
     
-    def ended(self, time):
+    def ended(self, frame):
         for i in range(len(self.grid)):
             for j in range(len(self.grid[0])):
                 if self.grid[i][j] != None:
-                    if not self.grid[i][j].ended(time):
+                    if not self.grid[i][j].ended(frame):
                         return False
         return True
     
@@ -218,17 +218,17 @@ class Board:
             self.gridsize)
         return rect
     
-    def draw(self, time):
+    def draw(self, frame):
         # draw everything on the board
-        self.background.draw(time)
+        self.background.draw(frame)
         for prop in self.decorations:
-            prop.draw(time)
+            prop.draw(frame)
         
         for temp in self.temporary_objects.copy():
-            if temp.ended(time):
+            if temp.ended(frame):
                 self.temporary_objects.remove(temp)
             else:
-               temp.draw(time)
+               temp.draw(frame)
        
         # TODO pre-generate the score indicator and just hide the balls until they're needed
         r = pygame.Rect(0,0,0,0)
@@ -243,7 +243,7 @@ class Board:
         for i in range(len(self.grid)):
             for j in range(len(self.grid[0])):
                 if self.grid[i][j]:
-                    self.grid[i][j].draw(time)
+                    self.grid[i][j].draw(frame)
 #</Board>
 
 import random
