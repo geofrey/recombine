@@ -1,11 +1,9 @@
 #!/usr/bin/python3
 
-import pygame
-from pygame import rect, draw, event
+from pygame import draw, Color, event, Rect
 import time
-
+from board import Board
 from recombinations import *
-from abstract_animation import Animation
 
 # game variables
 
@@ -105,7 +103,7 @@ while animate:
             
             elif event.state == 'moving':
                 if board.ended(start):
-                    if board.physics():
+                    if board.physics(start):
                         stateEvent('moving')
                     elif board.overheight():
                         stateEvent('gameover')
@@ -141,6 +139,7 @@ while animate:
     if elapsed < frametime:
         # frame rate throttle
         time.sleep(frametime - elapsed)
+# /loop
 
 # finally
 shutdown()
