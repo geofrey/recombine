@@ -52,6 +52,8 @@ while animate:
         if event.type == pygame.MOUSEBUTTONDOWN:
             if   event.button == 1: # left
                 stateEvent('drop')
+            elif event.button == 3: # right
+                stateEvent('cheat')
             elif event.button == 4: # wheel
                 stateEvent('spinRight')
             elif event.button == 5: # wheel
@@ -92,6 +94,8 @@ while animate:
                 dropindex = max(0, dropindex - 1)
             elif event.state == 'moveRight' and drop:
                 dropindex = min(dropindex + 1, boardwidth - len(drop[0]))
+            elif event.state == 'cheat' and drop:
+                stateEvent('newdrop')
             elif event.state == 'drop' and drop:
                 dropindex = max(0, min(dropindex, boardwidth - len(drop[0])))
                 added = board.insert(drop, dropindex)
