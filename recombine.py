@@ -27,7 +27,7 @@ pygame.display.set_caption('ReCombine')
 screen = pygame.display.set_mode((gridsize*boardwidth + 2*boardoffset, gridsize*(boardheight+2) + 3*boardoffset)) # ??
 
 boardpos = pygame.Rect((boardoffset, 2*boardoffset), (boardwidth*gridsize, (boardheight+2)*gridsize))
-board = Board(screen, boardpos, (boardheight, boardwidth), maxcolor, combinecolors, combinescores)
+board = Board(screen, boardpos, (boardwidth, boardheight), maxcolor, combinecolors, combinescores)
 
 drop = new_drop(board.currentcolor)
 dropindex = 0
@@ -84,8 +84,6 @@ while animate:
         
         if event.type == pygame.USEREVENT:
             #print(event.state)
-            #print('')
-            #print('\n'.join(map(lambda row: ' '.join(map(lambda ball: str(ball) if ball else '.', row)), board.grid)))
             
             # update stuff
             if event.state == 'spinLeft' and drop:
