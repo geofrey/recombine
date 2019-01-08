@@ -56,6 +56,9 @@ class Board:
     def __setitem__(self, i, x):
         self.grid[i] = x
     
+    def cheat_penalty(self):
+        self.score -= int(self.score * 0.10)
+    
     def gravity(self, time):
         moved = False
         for i in range(len(self.grid)-1-1, 0-1, -1): # scan bottom-1 to top
@@ -124,10 +127,10 @@ class Board:
             self.grid[remainder[0]][remainder[1]] = newball
             newball.appear(time, time+0.50)
             inserted = newball
+            self.currentcolor = max(inserted.color, self.currentcolor)
+            self.score += self.scorevalues[groupcolor]*len(group)
         else:
             inserted = None
-        self.currentcolor = max(inserted.color if inserted else 0, self.currentcolor)
-        self.score += self.scorevalues[groupcolor]*len(group)
         return removed, inserted
     
     def physics(self, time):

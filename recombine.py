@@ -96,6 +96,7 @@ while animate:
                 dropindex = min(dropindex + 1, boardwidth - len(drop[0]))
             elif event.state == 'cheat' and drop:
                 stateEvent('newdrop')
+                board.cheat_penalty()
             elif event.state == 'drop' and drop:
                 dropindex = max(0, min(dropindex, boardwidth - len(drop[0])))
                 added = board.insert(drop, dropindex)
