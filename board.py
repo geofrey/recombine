@@ -3,6 +3,10 @@ from ball import Ball
 import functools
 from pygame import Color, draw, font, Rect
 
+# time in seconds
+drop_duration = 0.08
+appear_duration = 0.4
+
 class Board:
     # dimensions - 2-tuple
     def __init__(self, screen, drawing_area, dimensions, maxcolor, drawingcolors, basescores):
@@ -65,7 +69,7 @@ class Board:
                     self.grid[i+1][j] = to_drop
                     self.grid[i][j] = None
                     #self.grid[i+1][j].y -= 1
-                    to_drop.move_to((j, len(self.grid)-i-1), time, time+0.10)
+                    to_drop.move_to((j, len(self.grid)-i-1), time, time + drop_duration)
                     moved = True
         return moved
     
@@ -111,7 +115,7 @@ class Board:
         removed = []
         for piece in group:
             outgoing = self.grid[piece[0]][piece[1]]
-            outgoing.vanish(time, time+0.50)
+            outgoing.vanish(time, time + appear_duration)
             self.temporary_objects.add(outgoing)
             removed.append(outgoing)
             self.grid[piece[0]][piece[1]] = None
@@ -122,7 +126,7 @@ class Board:
         if groupcolor < self.maxcolor:
             newball = Ball(self, (remainder[1], len(self.grid)-remainder[0]), groupcolor + 1)
             self.grid[remainder[0]][remainder[1]] = newball
-            newball.appear(time, time+0.50)
+            newball.appear(time, time + appear_duration)
             inserted = newball
         else:
             inserted = None
