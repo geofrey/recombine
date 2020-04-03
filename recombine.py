@@ -95,11 +95,13 @@ while animate:
         
         if event.type == pygame.MOUSEMOTION:
             # game state is updated inside event handling to allow mouse+keyboard input
-            ## Adjust mouse position by the border width, clip that at 0.
-            ## Scale down by the size of each square and clip that at piece-width away from the right edge.
+            ## clamp mouse position to the board area
+            ## adjust bounds based on the shape of the drop
             if drop:
-                dropwidth = len(drop[0])
-                dropindex = min(max(event.pos[0]-boardoffset, 0) // gridsize, boardwidth - dropwidth)
+                mousecolumn = min(max(event.pos[0]-boardoffset, 0) // gridsize, boardwidth)
+                offset = -1 if drop[0][0] == None and drop[1][0] == None else 0
+                dropmax = boardwidth - (1 if drop[0][1] != None or drop [1][1] != None else 0) - 1
+                dropindex = min(max(0, mousecolumn) + offset, dropmax)
         
         if event.type == pygame.QUIT:
             shutdown()
