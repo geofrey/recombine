@@ -1,9 +1,12 @@
 #!/usr/bin/python3
 
+import pygame
 from pygame import draw, Color, event, Rect
 import time
-from board import Board
-from recombinations import *
+from ball import Ball
+import board
+import random
+
 
 # game variables
 
@@ -17,6 +20,29 @@ gridsize = 40
 boardoffset = int(gridsize/2)
 maxcolor = len(combinecolors)-1
 turn = 0
+dropindex = 0
+
+def new_drop(maxcolor, start_time):
+    newdrop = [
+      [ None, None ],
+      [
+        Ball(gameboard, (1, dropindex), random.randint(1, maxcolor-1)),
+        Ball(gameboard, (1, dropindex+1), random.randint(1, maxcolor-1))
+      ]
+    ]
+    newdrop[1][0].appear(start_time, start_time + board.appear_duration)
+    newdrop[1][1].appear(start_time, start_time + board.appear_duration)
+    return newdrop
+
+def spin(old, direction):
+  if old == None:
+    return None
+  elif direction == 'left':
+    return [ [old[0][1], old[1][1]], [old[0][0], old[1][0]] ]
+  elif direction == 'right':
+    return [ [old[1][0], old[0][0]], [old[1][1], old[0][1]] ]
+  else:
+    raise ValueError('got "%" instead of left or right' % direction)
 
 
 pygame.init()
@@ -25,25 +51,23 @@ pygame.display.set_caption('ReCombine')
 screen = pygame.display.set_mode((gridsize*boardwidth + 2*boardoffset, gridsize*(boardheight+2) + 3*boardoffset)) # ??
 
 boardpos = pygame.Rect((boardoffset, 2*boardoffset), (boardwidth*gridsize, (boardheight+2)*gridsize))
-board = Board(screen, boardpos, (boardwidth, boardheight), maxcolor, combinecolors, combinescores)
+gameboard = board.Board(screen, boardpos, (boardwidth, boardheight), maxcolor, combinecolors, combinescores)
 
-drop = new_drop(board.currentcolor)
-dropindex = 0
+drop = new_drop(gameboard.currentcolor, time.time())
+
+def stateEvent(state):
+    pygame.event.post(pygame.event.Event(pygame.USEREVENT, {'state': state}))
 
 def shutdown():
     pygame.event.clear()
     pygame.quit()
     print(str(turn) + ' turns')
-    print(str(board.score) + ' points')
+    print(str(gameboard.score) + ' points')
     quit()
-
-def stateEvent(state):
-    pygame.event.post(pygame.event.Event(pygame.USEREVENT, {'state': state}))
 
 # event loop
 
 animate = True
-
 while animate:
     start = time.time()
 
@@ -94,25 +118,25 @@ while animate:
                 dropindex = min(dropindex + 1, boardwidth - len(drop[0]))
             elif event.state == 'drop' and drop:
                 dropindex = max(0, min(dropindex, boardwidth - len(drop[0])))
-                added = board.insert(drop, dropindex)
+                added = gameboard.insert(drop, dropindex)
                 drop = None
                 turn += 1
                 stateEvent('moving')
             elif event.state == 'newdrop':
-                drop = new_drop(board.currentcolor)
+                drop = new_drop(gameboard.currentcolor, start)
             
             elif event.state == 'moving':
-                if board.ended(start):
-                    if board.physics(start):
+                if gameboard.ended(start):
+                    if gameboard.physics(start):
                         stateEvent('moving')
-                    elif board.overheight():
+                    elif gameboard.overheight():
                         stateEvent('gameover')
                     else:
                         stateEvent('ready')
                 else:
                     stateEvent('moving')
             elif event.state == 'ready':
-                if board.ended(start):
+                if gameboard.ended(start):
                     stateEvent('newdrop')
                 else:
                     stateEvent('ready')
@@ -120,15 +144,17 @@ while animate:
                 animate = False
     
     # draw everything
-    board.draw(start)
+    gameboard.draw(start)
     
+    # draw drop
     # TODO stop doing this manually
     if drop:
-        # draw drop
         for i in range(0, len(drop)):
             for j in range(0, len(drop[0])):
-                if drop[i][j]:
-                    draw.ellipse(screen, combinecolors[drop[i][j]], board.get_rect(dropindex+j, boardheight+2-i), 0)
+                ball = drop[i][j]
+                if ball:
+                    ball.location = gameboard.get_rect(dropindex+j, boardheight+len(drop)-i)
+                    ball.draw(start)
    
     
     pygame.display.flip()

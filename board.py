@@ -152,7 +152,8 @@ class Board:
             for j in range(len(incoming[0])):
                 if incoming[i][j]:
                     x,y = index+j, self.dimensions[1]+2-i
-                    ball = Ball(self, (x, y), incoming[i][j])
+                    #ball = Ball(self, (x, y), incoming[i][j])
+                    ball = incoming[i][j]
                     self.grid[i][index+j] = ball
                     balls.append(ball)
         return balls
