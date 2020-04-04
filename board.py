@@ -124,13 +124,13 @@ class Board:
             if piece[0] == remainder[0] and piece[1] < remainder[1]:
                 remainder = piece
         if groupcolor < self.maxcolor:
-            self.currentcolor = groupcolor + 1
             newball = Ball(self, (remainder[1], len(self.grid)-remainder[0]), groupcolor + 1)
             self.grid[remainder[0]][remainder[1]] = newball
             newball.appear(time, time + appear_duration)
             inserted = newball
         else:
             inserted = None
+        self.currentcolor = max(inserted.color if inserted else 0, self.currentcolor)
         self.score += self.scorevalues[groupcolor]*len(group)
         return removed, inserted
     
