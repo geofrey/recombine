@@ -20,6 +20,7 @@ gridsize = 40
 boardoffset = int(gridsize/2)
 maxcolor = len(combinecolors)-1
 turn = 0
+droptarget = 0
 dropindex = 0
 
 def new_drop(maxcolor, start_time):
@@ -34,6 +35,12 @@ def new_drop(maxcolor, start_time):
     newdrop[1][1].appear(start_time, start_time + board.appear_duration)
     return newdrop
 
+def adjust_dropindex(target):
+    offset = -1 if drop[0][0] == None and drop[1][0] == None else 0
+    dropmax = boardwidth - (1 if drop[0][1] != None or drop [1][1] != None else 0) - 1
+    target = min(max(0, target) + offset, dropmax)
+    return target
+ 
 def spin(old, direction):
   if old == None:
     return None
@@ -70,7 +77,8 @@ def shutdown():
 animate = True
 while animate:
     start = time.time()
-
+    original_droptarget = droptarget
+    
     # check events
     for event in pygame.event.get():
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -98,35 +106,33 @@ while animate:
             ## clamp mouse position to the board area
             ## adjust bounds based on the shape of the drop
             if drop:
-                mousecolumn = min(max(event.pos[0]-boardoffset, 0) // gridsize, boardwidth)
-                offset = -1 if drop[0][0] == None and drop[1][0] == None else 0
-                dropmax = boardwidth - (1 if drop[0][1] != None or drop [1][1] != None else 0) - 1
-                dropindex = min(max(0, mousecolumn) + offset, dropmax)
+                droptarget = min(max(event.pos[0]-boardoffset, 0) // gridsize, boardwidth)
         
         if event.type == pygame.QUIT:
             shutdown()
         
         if event.type == pygame.USEREVENT:
             #print(event.state)
-            
             # update stuff
+            
             if event.state == 'spinLeft' and drop:
                 drop = spin(drop, 'left')
+                original_droptarget = None
             elif event.state == 'spinRight' and drop:
                 drop = spin(drop, 'right')
+                original_droptarget = None
             elif event.state == 'moveLeft' and drop:
-                dropindex = max(0, dropindex - 1)
+                droptarget = min(max(0, droptarget - 1), boardwidth)
             elif event.state == 'moveRight' and drop:
-                dropindex = min(dropindex + 1, boardwidth - len(drop[0]))
+                droptarget = min(max(0, droptarget + 1), boardwidth)
             elif event.state == 'drop' and drop:
-                dropindex = max(0, min(dropindex, boardwidth - len(drop[0])))
                 added = gameboard.insert(drop, dropindex)
                 drop = None
                 turn += 1
                 stateEvent('moving')
             elif event.state == 'newdrop':
                 drop = new_drop(gameboard.currentcolor, start)
-            
+                original_droptarget = None
             elif event.state == 'moving':
                 if gameboard.ended(start):
                     if gameboard.physics(start):
@@ -144,6 +150,9 @@ while animate:
                     stateEvent('ready')
             elif event.state == 'gameover':
                 animate = False
+            
+        if droptarget != original_droptarget:
+            dropindex = adjust_dropindex(droptarget)
     
     # draw everything
     gameboard.draw(start)
